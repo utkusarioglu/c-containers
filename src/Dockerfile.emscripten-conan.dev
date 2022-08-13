@@ -1,6 +1,8 @@
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive 
 RUN apt-get update
+
+# TODO Nginx here may be dropped here in favor of some small python library
 RUN apt-get install \
   software-properties-common \
   git \
