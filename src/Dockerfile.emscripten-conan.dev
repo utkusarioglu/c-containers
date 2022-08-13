@@ -1,9 +1,11 @@
 FROM ubuntu:22.04
+
+ARG ROOT_PASS=root
 ENV DEBIAN_FRONTEND=noninteractive 
-RUN apt-get update
 
 # TODO Nginx here may be dropped here in favor of some small python library
-RUN apt-get install \
+RUN apt-get update && \
+  apt-get install \
   software-properties-common \
   git \
   pip \
@@ -29,3 +31,5 @@ RUN chmod +x \
   /scripts/create-env-example.sh \
   /root/.bashrc \
   /root/.inputrc
+
+RUN echo "root:$ROOT_PASS" | chpasswd
