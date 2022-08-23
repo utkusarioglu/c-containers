@@ -4,6 +4,11 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 ARG ROOT_PASS
 
+RUN for arg in ROOT_PASS; \
+  do \
+  [ ! -z "${arg}" ] || { echo "ARG \"$arg\" needs to be set"; exit 1; } \
+  done;
+
 # TODO Nginx here may be dropped here in favor of some small python library
 RUN apt-get update && \
   apt-get install \
