@@ -1,7 +1,8 @@
 FROM ubuntu:22.04
 
-ARG ROOT_PASS=root
 ENV DEBIAN_FRONTEND=noninteractive 
+
+ARG ROOT_PASS
 
 # TODO Nginx here may be dropped here in favor of some small python library
 RUN apt-get update && \
