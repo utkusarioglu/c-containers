@@ -94,7 +94,7 @@ jobs:
             ${{ steps.variables.outputs.image_name }}:latest
             ${{ steps.variables.outputs.image_ref }}
           file: src/Dockerfile.emscripten-conan.dev
-          push: ${{ github.ref == 'refs/heads/main' }}
+          push: true
           cache-from: type=local,src=${{ env.CACHE_FROM_SRC }}
           cache-to: type=local,mode=max,dest=${{ env.CACHE_TO_DEST }}
           build-args: |
