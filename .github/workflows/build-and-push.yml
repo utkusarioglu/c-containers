@@ -2,9 +2,6 @@ name: build-and-push
 
 on:
   push:
-    branches:
-      - main
-      - feature/*
     tags:
       - "*.*.*"
       - feature/*/*
@@ -61,6 +58,7 @@ jobs:
           fi
 
       - name: Variables
+        if: steps.run_state.outputs.run_docker_build == 'true'
         id: variables
         run: |
           image_name=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.CONTAINER_NAME }}
@@ -101,10 +99,6 @@ jobs:
           cache-to: type=local,mode=max,dest=${{ env.CACHE_TO_DEST }}
           build-args: |
             ROOT_PASS=${{ secrets.DOCKER_IMAGE_ROOT_PASS }}
-
-      - name: Image digest
-        if: steps.run_state.outputs.run_docker_build == 'true'
-        run: echo ${{ steps.docker_build.outputs.digest }}
 
       - name: Set Docker Hub description
         if: steps.run_state.outputs.run_docker_build == 'true'
