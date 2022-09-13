@@ -3,8 +3,9 @@ name: build-and-push
 on:
   push:
     tags:
-      - "*.*.*"
-      - feature/*/*
+      - "**.**.**"
+      - feature/**/**
+      - experiment/**/**/**
     paths:
       - src/**
       - .github/workflows/build-and-push.yml
@@ -58,19 +59,24 @@ jobs:
           fi
 
       - name: Variables
-        if: steps.run_state.outputs.run_docker_build == 'true'
         id: variables
         run: |
           image_name=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.CONTAINER_NAME }}
           repo_tag=${{ steps.latest_tag.outputs.tag }}
           image_tag=${repo_tag//\//-}
+          dev_image_tag="${image_tag}"
           image_ref="${image_name}:${image_tag}"
           short_image_ref="${{ env.CONTAINER_NAME }}:${image_tag}"
+          dev_image_ref="$image_name:$dev_image_tag"
+          short_dev_image_ref="${{ env.CONTAINER_NAME }}:$dev_image_tag"
 
           echo "::set-output name=image_name::$image_name"
           echo "::set-output name=image_tag::$image_tag"
+          echo "::set-output name=dev_image-tag::$dev_image_tag"
           echo "::set-output name=image_ref::$image_ref"
-          echo "::set-output name=short_image_ref::$short_image_ref"
+          echo "::set-output name=short_image-ref::$short_image_ref"
+          echo "::set-output name=dev_image_ref::$dev_image_ref"
+          echo "::set-output name=short_dev_image-ref::$short_dev_image_ref"
 
       - name: Set up Docker Buildx
         if: steps.run_state.outputs.run_docker_build == 'true'
@@ -99,6 +105,19 @@ jobs:
           cache-to: type=local,mode=max,dest=${{ env.CACHE_TO_DEST }}
           build-args: |
             ROOT_PASS=${{ secrets.DOCKER_IMAGE_ROOT_PASS }}
+
+      - name: Build devcontainer ${{ steps.variables.outputs.short_dev_image_ref }}
+        if: steps.run_state.outputs.run_docker_build == 'true'
+        id: devcontainer_build
+        uses: devcontainers/ci@v0.2
+        env:
+          IMAGE_NAME: ${{ steps.variables.outputs.image_name }}
+          IMAGE_TAG: ${{ steps.variables.outputs.image_tag }}
+        with:
+          imageName: ${{ steps.variables.outputs.image_name }}
+          imageTag: ${{ steps.variables.outputs.image_tag }}
+          subFolder: src
+          runCmd: /scripts/devcontainer-check.sh
 
       - name: Set Docker Hub description
         if: steps.run_state.outputs.run_docker_build == 'true'
