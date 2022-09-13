@@ -39,3 +39,4 @@ RUN chmod +x \
   /root/.inputrc
 
 RUN echo "root:$ROOT_PASS" | chpasswd
+COPY src/scripts /scripts
