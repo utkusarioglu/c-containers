@@ -18,13 +18,20 @@ RUN apt-get update && \
   clang-14 \
   lsb-release \
   cmake \
-  nginx \
   curl \
-  vim \
+  wget \
   -y
 RUN ln -s /usr/bin/clang-14 /usr/local/bin/clang && \
   ln -s /usr/bin/clang++-14 /usr/local/bin/clang++
 RUN pip install conan --quiet
+
+# Neovim requires manual retrieval of the latest version
+# as the apt package is quite old
+RUN wget https://github.com/neovim/neovim/releases/download/v0.8.0/nvim-linux64.deb \
+  -O /neovim.deb
+RUN apt install -y /neovim.deb 
+RUN rm /neovim.deb
+ENV EDITOR=nvim
 
 # Gists
 ADD https://gist.githubusercontent.com/utkusarioglu/2d4be44dc7707afccd540ad99ba385e6/raw/create-env-example.sh \
