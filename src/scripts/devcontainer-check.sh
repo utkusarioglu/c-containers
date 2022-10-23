@@ -1,6 +1,6 @@
 #!/bin/bash
 
-required_packages="gh conan vim git cmake nginx curl"
+required_packages="gh conan nvim git cmake curl"
 
 for exec in $required_packages;
 do
