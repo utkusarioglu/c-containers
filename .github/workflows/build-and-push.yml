@@ -11,15 +11,19 @@ on:
       - .github/workflows/build-and-push.yml
   workflow_dispatch:
 
-env:
-  CONTAINER_NAME: emscripten-conan-devcontainer
-  CACHE_TO_DEST: /tmp/.buildx-cache-new
-  CACHE_FROM_SRC: /tmp/.buildx-cache
-
 jobs:
   build-and-push:
     name: build-and-push
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        images:
+          - enabled: true
+            username: conan
+            containerName: emscripten-conan-devcontainer
+        common:
+          - cacheToDest: /tmp/.buildx-cache-new
+            cacheFromSrc: /tmp/.buildx-cache
 
     steps:
       - name: Checkout code
@@ -32,66 +36,76 @@ jobs:
         uses: tj-actions/changed-files@v25
         with:
           files: |
-            src/**
+            src/*
             .github/workflows/build-and-push.yml
-
-      - name: Get latest tag
-        id: latest_tag
-        uses: WyriHaximus/github-action-get-previous-tag@v1
-        with:
-          fallback: tag-unavailable
 
       - name: Declare run state
         id: run_state
         run: |
-          if [ ${{ steps.latest_tag.outputs.tag }} != tag-unavailable ] && \
-            ( \
-              [ ${{ steps.changed_files.outputs.any_modified }} == true ] || \
-              [ ${{ github.event_name }} == workflow_dispatch ] \
-            );
+          ref_type="${{ github.ref_type }}"
+          enabled="${{ matrix.images.enabled }}"
+          any_modified="${{ steps.changed_files.outputs.any_modified }}"
+          event_name="${{ github.event_name }}"
+
+          if [ "$ref_type" == tag ] && \
+             [ "$enabled" == true ] && \
+             ( \
+               [ "$any_modified" == true ] || \
+               [ "$event_name" == workflow_dispatch ] \
+             );
           then
-            echo "::set-output name=run_docker_build::true"
+            echo "run_docker_build=true" >> $GITHUB_OUTPUT
             echo "::debug::Docker build will carry out as expected."
           else
-            echo "::set-output name=run_docker_build::false"
-            echo "::debug::Docker build is cancelled as none of the watched files have been changed."
-            echo "Docker build is cancelled as none of the watched files have been changed."
+            echo "run_docker_build=false" >> $GITHUB_OUTPUT
+            echo "Docker build is cancelled as the required conditions for a run haven't been met"
           fi
+
+          echo "Ref type: $ref_type"
+          echo "Enabled: $enabled"
+          echo "Any modified: $any_modified"
+          echo "Event name: $event_name" 
 
       - name: Variables
         id: variables
         run: |
-          image_name=${{ secrets.DOCKERHUB_USERNAME }}/${{ env.CONTAINER_NAME }}
-          repo_tag=${{ steps.latest_tag.outputs.tag }}
+          image_name=${{ secrets.DOCKERHUB_USERNAME }}/${{ matrix.images.containerName }}
+          repo_tag="${{ github.ref_name }}"
           image_tag=${repo_tag//\//-}
           dev_image_tag="${image_tag}"
           image_ref="${image_name}:${image_tag}"
-          short_image_ref="${{ env.CONTAINER_NAME }}:${image_tag}"
+          short_image_ref="${{ matrix.images.containerName }}:${image_tag}"
           dev_image_ref="$image_name:$dev_image_tag"
-          short_dev_image_ref="${{ env.CONTAINER_NAME }}:$dev_image_tag"
+          short_dev_image_ref="${{ matrix.images.containerName }}:$dev_image_tag"
 
-          echo "::set-output name=image_name::$image_name"
-          echo "::set-output name=image_tag::$image_tag"
-          echo "::set-output name=dev_image-tag::$dev_image_tag"
-          echo "::set-output name=image_ref::$image_ref"
-          echo "::set-output name=short_image-ref::$short_image_ref"
-          echo "::set-output name=dev_image_ref::$dev_image_ref"
-          echo "::set-output name=short_dev_image-ref::$short_dev_image_ref"
+          output_variables='
+            image_name
+            image_tag
+            dev_image_tag
+            image_ref
+            dev_image_ref
+            short_image_ref
+            short_dev_image_ref
+          '
+
+          for i in $output_variables; do
+            echo "$i=${!i}" >> $GITHUB_OUTPUT; 
+          done
 
       - name: Set up Docker Buildx
-        if: steps.run_state.outputs.run_docker_build == 'true'
+        # if: steps.run_state.outputs.run_docker_build == 'true'
         id: buildx
         uses: docker/setup-buildx-action@v1
 
       - name: Login to DockerHub
-        if: steps.run_state.outputs.run_docker_build == 'true'
+        # if: steps.run_state.outputs.run_docker_build == 'true'
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build image and push ${{ steps.variables.outputs.short_image_ref }}
-        if: steps.run_state.outputs.run_docker_build == 'true'
+        # if: steps.run_state.outputs.run_docker_build == 'true'
         id: docker_build
         uses: docker/build-push-action@v2
         with:
@@ -101,13 +115,14 @@ jobs:
             ${{ steps.variables.outputs.image_ref }}
           file: src/Dockerfile.emscripten-conan.dev
           push: true
-          cache-from: type=local,src=${{ env.CACHE_FROM_SRC }}
-          cache-to: type=local,mode=max,dest=${{ env.CACHE_TO_DEST }}
+          cache-from: type=local,src=${{ matrix.common.cacheFromSrc }}
+          cache-to: type=local,mode=max,dest=${{ matrix.common.cacheToDest }}
           build-args: |
             ROOT_PASS=${{ secrets.DOCKER_IMAGE_ROOT_PASS }}
+            USERNAME=${{ matrix.images.username }}
 
       - name: Build devcontainer ${{ steps.variables.outputs.short_dev_image_ref }}
-        if: steps.run_state.outputs.run_docker_build == 'true'
+        # if: steps.run_state.outputs.run_docker_build == 'true'
         id: devcontainer_build
         uses: devcontainers/ci@v0.2
         env:
@@ -120,7 +135,7 @@ jobs:
           runCmd: /scripts/devcontainer-check.sh
 
       - name: Set Docker Hub description
-        if: steps.run_state.outputs.run_docker_build == 'true'
+        # if: steps.run_state.outputs.run_docker_build == 'true'
         uses: peter-evans/dockerhub-description@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -130,19 +145,10 @@ jobs:
           readme-filepath: src/DOCKER_README.md
 
       - name: Move cache
-        if: steps.run_state.outputs.run_docker_build == 'true'
+        # if: steps.run_state.outputs.run_docker_build == 'true'
         run: |
-          rm -rf ${{ env.CACHE_FROM_SRC }}
-          if [ -d ${{ env.CACHE_FROM_SRC }} ];
+          rm -rf ${{ matrix.common.cacheFromSrc }}
+          if [ -d ${{ matrix.common.cacheFromSrc }} ];
           then
-            mv ${{ env.CACHE_TO_DEST }} ${{ env.CACHE_FROM_SRC }}
+            mv ${{ matrix.common.cacheToDest }} ${{ matrix.common.cacheFromSrc }}
           fi
-
-      - name: Telegram notifications
-        if: always()
-        uses: utkusarioglu/telegram-notifications@main
-        with:
-          telegram_id: ${{ secrets.TELEGRAM_ID }}
-          telegram_token: ${{ secrets.TELEGRAM_TOKEN }}
-          job_status: ${{ job.status }}
-          github_context: ${{ toJson(github) }}

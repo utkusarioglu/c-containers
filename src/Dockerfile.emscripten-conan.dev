@@ -2,12 +2,22 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive 
 
+ARG USERNAME
 ARG ROOT_PASS
+ARG GROUP_NAME=conan
+ARG GROUP_ID=1000
+ARG YQ_VERSION="v4.28.1"
+ARG NVIM_VERSION="v0.8.3"
+ARG HOME="/home/$USERNAME"
+ARG ELAM_ABSPATH="$HOME/elam"
 
 RUN for arg in ROOT_PASS; \
   do \
   [ ! -z "${arg}" ] || { echo "ARG \"$arg\" needs to be set"; exit 1; } \
   done;
+
+RUN groupadd -g $GROUP_ID -f $GROUP_NAME
+RUN useradd -m -g $GROUP_ID -s /bin/bash $USERNAME
 
 # TODO Nginx here may be dropped here in favor of some small python library
 RUN apt-get update && \
@@ -20,30 +30,53 @@ RUN apt-get update && \
   cmake \
   curl \
   wget \
+  jq \
+  sudo \
   -y
 RUN ln -s /usr/bin/clang-14 /usr/local/bin/clang && \
   ln -s /usr/bin/clang++-14 /usr/local/bin/clang++
 RUN pip install conan --quiet
 
+# NODEJS
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash - && \
+  sudo apt-get install -y nodejs
+
+# Yq requires manual retrieval of the package
+RUN wget \
+  https://github.com/mikefarah/yq/releases/download/$YQ_VERSION/yq_linux_amd64 \
+  -O /usr/bin/yq && \
+  chmod +x /usr/bin/yq
+
 # Neovim requires manual retrieval of the latest version
 # as the apt package is quite old
-RUN wget https://github.com/neovim/neovim/releases/download/v0.8.0/nvim-linux64.deb \
+RUN wget https://github.com/neovim/neovim/releases/download/$NVIM_VERSION/nvim-linux64.deb \
   -O /neovim.deb
 RUN apt install -y /neovim.deb 
 RUN rm /neovim.deb
 ENV EDITOR=nvim
 
+RUN echo "root:$ROOT_PASS" | chpasswd
+
 # Gists
 ADD https://gist.githubusercontent.com/utkusarioglu/2d4be44dc7707afccd540ad99ba385e6/raw/create-env-example.sh \
   /scripts/create-env-example.sh
 ADD https://gist.githubusercontent.com/utkusarioglu/3523b00578807d63b05399fe57a4b2a7/raw/.bashrc \
-  /root/.bashrc
+  $HOME/.bashrc
 ADD https://gist.githubusercontent.com/utkusarioglu/d5c216c744460c45bf6260d0de4131b4/raw/.inputrc \
-  /root/.inputrc
+  $HOME/.inputrc
 RUN chmod +x \
   /scripts/create-env-example.sh \
-  /root/.bashrc \
-  /root/.inputrc
+  $HOME/.bashrc \
+  $HOME/.inputrc
+RUN chown 1000:1000 \
+  /scripts/* \
+  $HOME/.bashrc \
+  $HOME/.inputrc
 
-RUN echo "root:$ROOT_PASS" | chpasswd
+USER $USERNAME
+
+# Elam
+RUN git clone https://github.com/utkusarioglu/elam.git $ELAM_ABSPATH
+RUN echo "alias elam=$ELAM_ABSPATH/elam.sh" >> $HOME/.bash_aliases
+
 COPY src/scripts /scripts
