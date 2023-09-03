@@ -73,6 +73,15 @@ RUN chown 1000:1000 \
   $HOME/.bashrc \
   $HOME/.inputrc
 
+RUN mkdir -p /home/conan/.vscode-server/extensions
+
+# Required by vscode
+RUN mkdir -p $HOME/.vscode-server/extensions
+RUN mkdir -p $HOME/.vscode-server-insiders/extensions
+RUN mkdir -p $HOME/.vscode-server/bin
+RUN mkdir -p $HOME/.conan2
+RUN chown -R $USERNAME:$GROUP_ID $HOME
+
 USER $USERNAME
 
 # Elam
