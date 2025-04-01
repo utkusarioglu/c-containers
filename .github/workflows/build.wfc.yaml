@@ -1,0 +1,77 @@
+name: build-and-push
+
+on:
+  workflow_call:
+    inputs: 
+      image_tag:
+        description: Tag of the final docker image
+        type: string
+        required: true
+      base_tag:
+        description: Ubuntu base image tag
+        type: string
+        required: true
+    secrets:
+      dockerhub_username: 
+        required: true
+      dockerhub_token: 
+        required: true 
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        images:
+            # Emscripten conan
+          - dockerfile: src/emscripten-conan/Dockerfile
+            container_name: emscripten-conan-devcontainer
+            base_image: node-devcontainer
+            image_tag: ${{ inputs.image_tag }}
+            base_tag: ${{ inputs.base_tag }}
+            devcontainer_subfolder: emscripten-conan
+            dockerhub_readme_path: src/emscripten-conan/DOCKER_README.md
+            dockerhub_short_description: Devcontainer Emscripten and conan C++ workloads
+            apt_packages: ""
+            # These should come from base image
+              # git
+              # curl
+              # wget
+              # jq
+              # sudo
+            apt_packages_silent: >-
+              software-properties-common
+              pip
+              clang-14
+              lsb-release
+              cmake
+              gdb
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Build and push ${{ steps.variables.outputs.image_ref }}
+        uses: utkusarioglu/devcontainer-build-action@main
+        with:
+          docker_context: src
+          dockerhub_username: ${{ secrets.dockerhub_username }}
+          dockerhub_token: ${{ secrets.dockerhub_token }}
+          image_name: ${{ matrix.images.container_name }}
+          image_tag: ${{ matrix.images.image_tag }}
+          dockerfile_path: ${{ matrix.images.dockerfile }}
+          build_args: |
+            BASE_TAG=${{ matrix.images.base_tag }}
+            BASE_IMAGE=${{ matrix.images.base_image }}
+            ENVIRONMENT_NAME=${{ matrix.images.environment_name }}
+            PYTHON_VERSION=${{ matrix.images.python_version }}
+            APT_PACKAGES=${{ matrix.images.apt_packages }}
+            APT_PACKAGES_SILENT=${{ matrix.images.apt_packages_silent }}
+          devcontainer_enabled: "false"
+          devcontainer_subfolder: src/${{ matrix.images.devcontainer_subfolder }}
+          devcontainer_run_cmd_path: /home/dev/scripts/bootstrap/python/check-devcontainer.sh
+          dockerhub_repo_short_description: ${{ matrix.images.dockerhub_short_description }}
+          dockerhub_repo_readme_file_path: ${{ matrix.images.dockerhub_readme_path }}
