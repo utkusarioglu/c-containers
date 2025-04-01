@@ -34,6 +34,7 @@ jobs:
             dockerhub_readme_path: src/emscripten-conan/DOCKER_README.md
             dockerhub_short_description: Devcontainer Emscripten and conan C++ workloads
             environment_name: emscripten-conan
+            python_version: "3.13"
             apt_packages: ""
             # These should come from base image
               # git
@@ -68,6 +69,7 @@ jobs:
             BASE_TAG=${{ matrix.images.base_tag }}
             BASE_IMAGE=${{ matrix.images.base_image }}
             ENVIRONMENT_NAME=${{ matrix.images.environment_name }}
+            PYTHON_VERSION=${{ matrix.images.python_version }}
             APT_PACKAGES=${{ matrix.images.apt_packages }}
             APT_PACKAGES_SILENT=${{ matrix.images.apt_packages_silent }}
           devcontainer_enabled: "false"
