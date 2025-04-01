@@ -8,7 +8,6 @@ A devcontainer image for C, C++ development with Conan and Emscripten.
 - pip
 - clang-14
 - cmake
-- nginx
 - curl
 - vim
 
