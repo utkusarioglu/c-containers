@@ -23,6 +23,7 @@ USER root
 
 COPY home/ .
 COPY ${ENVIRONMENT_NAME}/home .
+COPY ${ENVIRONMENT_NAME}/requirements.txt requirements.txt
 
 RUN ls -alR ${HOME_ABSPATH}
 
