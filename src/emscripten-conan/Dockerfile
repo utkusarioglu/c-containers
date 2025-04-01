@@ -3,6 +3,7 @@ ARG BASE_TAG
 
 FROM utkusarioglu/${BASE_IMAGE}:${BASE_TAG}
 
+ARG ENVIRONMENT_NAME
 ARG APT_PACKAGES
 ARG APT_PACKAGES_SILENT
 
@@ -16,7 +17,8 @@ WORKDIR ${HOME_ABSPATH}
 
 USER root
 
-COPY home/scripts/ scripts/
+COPY home/ .
+COPY home/${ENVIRONMENT_NAME}/ .
 
 RUN ls -alR ${HOME_ABSPATH}
 
@@ -26,7 +28,7 @@ RUN ${BOOTSTAP_ABSPATH}/linux/install-apt.sh --no-check "${APT_PACKAGES_SILENT}"
 
 RUN ${BOOTSTAP_ABSPATH}/linux/install-apt.sh "${APT_PACKAGES}"
 
-RUN ${BOOTSTAP_ABSPATH}/c/install.sh
+RUN ${BOOTSTAP_ABSPATH}/c/${ENVIRONMENT_NAME}/install.sh
 
 RUN ${BOOTSTAP_ABSPATH}/linux/clean-apt.sh
 
