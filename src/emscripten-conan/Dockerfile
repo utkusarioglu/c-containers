@@ -28,7 +28,8 @@ RUN ${BOOTSTAP_ABSPATH}/linux/install-apt.sh --no-check "${APT_PACKAGES_SILENT}"
 
 RUN ${BOOTSTAP_ABSPATH}/linux/install-apt.sh "${APT_PACKAGES}"
 
-RUN ${BOOTSTAP_ABSPATH}/c/${ENVIRONMENT_NAME}/install.sh
+RUN ${BOOTSTAP_ABSPATH}/c/set-clang-ln.sh
+RUN ${BOOTSTAP_ABSPATH}/c/${ENVIRONMENT_NAME}/install-emscripten-conan.sh
 
 RUN ${BOOTSTAP_ABSPATH}/linux/clean-apt.sh
 
