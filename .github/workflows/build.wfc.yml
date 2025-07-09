@@ -31,6 +31,7 @@ jobs:
             image_tag: ${{ inputs.image_tag }}
             base_tag: ${{ inputs.base_tag }}
             devcontainer_subfolder: emscripten-conan
+            dockerhub_repo_description_update: false
             dockerhub_readme_path: src/emscripten-conan/DOCKER_README.md
             dockerhub_short_description: Devcontainer Emscripten and conan C++ workloads
             environment_name: emscripten-conan
@@ -42,10 +43,12 @@ jobs:
               # wget
               # jq
               # sudo
+              
+              # clang-14
             apt_packages_silent: >-
               software-properties-common
               pip
-              clang-14
+              clang-20
               lsb-release
               cmake
               gdb
@@ -75,5 +78,6 @@ jobs:
           devcontainer_enabled: "false"
           devcontainer_subfolder: src/${{ matrix.images.devcontainer_subfolder }}
           devcontainer_run_cmd_path: /home/dev/scripts/bootstrap/python/check-devcontainer.sh
+          dockerhub_repo_description_update: ${{ matrix.images.dockerhub_repo_description_update }}
           dockerhub_repo_short_description: ${{ matrix.images.dockerhub_short_description }}
           dockerhub_repo_readme_file_path: ${{ matrix.images.dockerhub_readme_path }}
