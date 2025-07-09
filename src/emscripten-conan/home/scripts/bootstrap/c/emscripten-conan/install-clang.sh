@@ -4,7 +4,7 @@ set -euo pipefail
 bash --version
 
 # 1. Download and install llvm.sh (adds repo + installs Clang)
-wget -qO- https://apt.llvm.org/llvm.sh | sudo bash -s -- 20
+wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 20
 
 # 2. (Optional) Move GPG key to Debian keyrings if you want future security compliance:
 mkdir -p /etc/apt/keyrings

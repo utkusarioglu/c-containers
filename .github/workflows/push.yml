@@ -2,6 +2,10 @@ name: Push
 
 on:
   push
+  
+concurrency:
+  cancel-in-progress: true
+  group: push
 
 jobs:
   push:
