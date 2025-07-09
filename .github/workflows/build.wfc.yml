@@ -45,10 +45,10 @@ jobs:
               # sudo
               
               # clang-14
+              # clang-20
             apt_packages_silent: >-
               software-properties-common
               pip
-              clang-20
               lsb-release
               cmake
               gdb

@@ -29,11 +29,14 @@ RUN ls -alR ${HOME_ABSPATH}
 
 RUN ${BOOTSTAP_ABSPATH}/linux/update-apt.sh
 
+RUN ${BOOTSTAP_ABSPATH}/c/${ENVIRONMENT_NAME}/install-clang.sh
+# RUN ${BOOTSTAP_ABSPATH}/c/set-clang-ln.sh
+
 RUN ${BOOTSTAP_ABSPATH}/linux/install-apt.sh --no-check "${APT_PACKAGES_SILENT}"
 
 RUN ${BOOTSTAP_ABSPATH}/linux/install-apt.sh "${APT_PACKAGES}"
 
-RUN ${BOOTSTAP_ABSPATH}/c/set-clang-ln.sh
+# RUN ${BOOTSTAP_ABSPATH}/c/set-clang-ln.sh
 RUN ${BOOTSTAP_ABSPATH}/c/${ENVIRONMENT_NAME}/install-python.sh \
   ${HOME_ABSPATH} \
   ${PYTHON_VERSION} \
